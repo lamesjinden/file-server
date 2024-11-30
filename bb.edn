@@ -1,0 +1,22 @@
+{:paths ["build"]
+ :tasks
+ {:requires ([build :as b])
+
+  :init (defn ->now [] (.toString (java.time.LocalTime/now)))
+
+  :enter (println (format ">> Entering: %s (%s)" (:name (current-task)) (->now)))
+  :leave (println (format ">> Exiting: %s (%s)" (:name (current-task)) (->now)))
+
+  build-file-server (b/build-file-server)
+  export-file-server (b/export-file-server)
+
+  clean (b/clean)
+
+  build (do (run 'build-file-server))
+
+  all (do (run 'clean)
+          (run 'build))
+
+  run-dev-file-server (b/run-dev-file-server *command-line-args*)
+  run-dev-file-server-repl (b/run-dev-file-server-repl)
+  run-file-server (b/run-file-server *command-line-args*)}}

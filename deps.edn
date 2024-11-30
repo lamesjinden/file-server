@@ -1,0 +1,42 @@
+{:paths ["src"]
+ :deps  {com.taoensso/timbre {:mvn/version "6.6.1"}
+         com.taoensso/timbre-slf4j {:mvn/version "6.6.1"}
+         #_#_com.fzakaria/slf4j-timbre {:mvn/version "0.4.1"}
+         #_#_org.slf4j/slf4j-nop {:mvn/version "2.0.5"}
+
+
+         org.slf4j/slf4j-api {:mvn/version "2.0.16"}
+
+
+         org.babashka/cli {:mvn/version "0.4.39"}
+         org.clojure/clojure {:mvn/version "1.11.1"}
+         org.clojure/tools.cli {:mvn/version "1.0.214"}
+         babashka/fs {:mvn/version "0.4.19"}
+         babashka/process {:mvn/version "0.5.22"}
+         hiccup/hiccup {:mvn/version "2.0.0-alpha2"}
+         ring/ring-jetty-adapter {:mvn/version "1.13.0"}
+         ring-range-middleware/ring-range-middleware {:mvn/version "0.1.0"}}
+
+ :aliases
+ {:dev-server
+  {:extra-deps {ring/ring-devel {:mvn/version "1.10.0"}
+                ring-cors/ring-cors {:mvn/version "0.1.13"}
+                expound/expound {:mvn/version "0.9.0"}
+                cider/cider-nrepl {:mvn/version "0.44.0"}}}
+
+  :nrepl-main
+  {:main-opts ["-m" "nrepl.cmdline" "--middleware" "[cider.nrepl/cider-middleware]"]}
+
+  :dev-file-server
+  {:extra-paths ["dev"]}
+
+  :run-dev-file-server
+  {:main-opts ["-m" "dev-server"]}
+
+  :run-file-server
+  {:main-opts ["-m" "file-server.app-server"]}
+
+  :file-uberjar
+  {:deps {io.github.clojure/tools.build {:mvn/version "0.9.3"}}
+   :extra-paths ["build"]
+   :ns-default  build}}}
