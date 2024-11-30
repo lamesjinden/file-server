@@ -38,5 +38,5 @@
 
   :file-uberjar
   {:deps {io.github.clojure/tools.build {:mvn/version "0.9.3"}}
-   :extra-paths ["build"]
-   :ns-default  build}}}
+   :extra-paths ["package"]
+   :ns-default  package}}}
