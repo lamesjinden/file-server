@@ -2,8 +2,8 @@
   (:require [babashka.cli :as cli]))
 
 (def default-options
-  {:port       8090
-   :ip         "127.0.0.1"})
+  {:port 8000
+   :host "0.0.0.0"})
 
 (def cli-spec {:help
                {:ref "<help>"
@@ -12,7 +12,7 @@
 
                :verbose
                {:ref "<verbosity>"
-                :desc "Logging verbosity. <verbosity> can be provided as a switch (-v or --verbose) or key=val (--verbosity=false)."
+                :desc "Logging verbosity. <verbosity> can be provided as a switch (-v or --verbose) or key=val (--verbosity=false). Supports multiple instances for increased verbosity."
                 :alias :v
                 :coerce []}
 

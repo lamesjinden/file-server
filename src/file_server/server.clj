@@ -1,6 +1,7 @@
 (ns file-server.server
   (:require
    [babashka.fs :as fs]
+   [clojure.pprint :refer [pprint]]
    [clojure.string :as s]
    [file-server.http :as http]
    [hiccup2.core :as html]
@@ -41,7 +42,7 @@
                 [:body
                  [:div
                   [:h1 "File Upload"]
-                  [:form {:action "~/" :method "post" :enctype "multipart/form-data"}
+                  [:form {:action "" :method "post" :enctype "multipart/form-data"}
                    [:input {:type "file" :name "file" :required true}]
                    [:input {:type "submit" :value "Upload File"}]]]
                  [:div
@@ -50,7 +51,7 @@
                    (for [child files]
                      [:li child])]]
                  [:hr]
-                 [:footer {:style {"text-align" "center"}} "Served by http-server.clj"]]]
+                 [:footer {:style {"text-align" "center"}} "file-server.clj"]]]
                html/html
                str)}))
 
@@ -129,17 +130,15 @@
   (if-not (fs/exists? (fs/path upload-dir filename))
     (fs/path upload-dir filename)
     (->> (range)
-         (map #(fs/path upload-dir (str filename "-" % (fs/extension filename))))
+         (map #(fs/path upload-dir (str (fs/strip-ext filename) "-" % "." (fs/extension filename))))
          (drop-while fs/exists?)
          (first))))
 
 (defn handle-post [request]
-  (let [referer (get-in request [:headers "referer"])
-        origin (get-in request [:headers "origin"])
-        relative-path (let [x (s/replace-first referer origin "")]
-                        (if (s/starts-with? x "/")
-                          (s/replace-first x "/" "")
-                          x))
+  (let [uri (:uri request)
+        relative-path (if (s/starts-with? uri "/")
+                        (s/replace-first uri "/" "")
+                        uri)
         root-dir (fs/cwd)
         upload-dir (fs/path root-dir relative-path)]
 
@@ -161,6 +160,9 @@
      :body (str "File(s) uploaded successfully")}))
 
 (defn router [{:keys [request-method] :as request}]
+  (debug (with-out-str
+           (pprint request)))
+
   (cond
     (= request-method :get)
     (handle-get request)
@@ -178,13 +180,13 @@
 (defn- server-settings->display-strs [server-settings]
   (cond-> []
     (:ip server-settings)
-    (conj (str "IP:\t" (:ip server-settings)))
+    (conj (str "Host:\t" (:host server-settings)))
 
-    (:queue-size server-settings)
-    (conj (str "Queue Size:\t" (:queue-size server-settings)))))
+    (:port server-settings)
+    (conj (str "Port:\t" (:port server-settings)))))
 
 (defn- gather-server-settings [application-settings]
-  (let [server-settings (select-keys application-settings [:ip :port])]
+  (let [server-settings (select-keys application-settings [:host :port])]
     (doseq [s (server-settings->display-strs server-settings)]
       (debug s))
     server-settings))
