@@ -1,9 +1,13 @@
 (ns file-server.cli
-  (:require [babashka.cli :as cli]))
+  (:require [babashka.cli :as cli]
+            [babashka.fs :as fs]))
 
 (def default-options
   {:port 8000
-   :host "0.0.0.0"})
+   :host "0.0.0.0"
+   :directory (-> (fs/cwd)
+                  (fs/canonicalize)
+                  (str))})
 
 (def cli-spec {:help
                {:ref "<help>"
@@ -27,7 +31,12 @@
                 :alias :p
                 :coerce :long
                 :validate {:pred #(< 0 % 0x10000)
-                           :ex-msg (fn [m] (str "Not a valid port number: " (:value m)))}}})
+                           :ex-msg (fn [m] (str "Not a valid port number: " (:value m)))}}
+
+               :directory
+               {:ref "<directory>"
+                :desc "Directory to serve"
+                :alias :d}})
 
 (defn create-cli-error-fn [cli-errors-ref]
   (fn [{:keys [_spec type cause msg _option] :as data}]

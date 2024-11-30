@@ -51,7 +51,7 @@
                    (for [child files]
                      [:li child])]]
                  [:hr]
-                 [:footer {:style {"text-align" "center"}} "file-server.clj"]]]
+                 [:footer {:style {"text-align" "center"}} "file-server2.clj"]]]
                html/html
                str)}))
 
@@ -88,23 +88,35 @@
    (byte-range path request-headers {}))
   ([path request-headers response-headers]
    (let [f (fs/file path)
+         _ (prn "here 1" f)
          [start _end :as requested-range] (parse-range-header (request-headers "range"))
+         _ (prn "here 2" start)
          arr (read-bytes f requested-range)
-         num-bytes-read (count arr)]
+         _ (prn "here 3")
+         num-bytes-read (count arr)
+         _ (prn "here 4" num-bytes-read)
+
+         content-type (ext-mime-type (fs/file-name path))
+         _ (prn "here 5" content-type)
+         content-range (format "bytes %d-%d/%d"
+                               start
+                               (+ start num-bytes-read)
+                               (fs/size f))
+         _ (prn "here 6" content-range)]
      {:status 206
-      :headers (merge {"Content-Type" (ext-mime-type (fs/file-name path))
+      :headers (merge {"Content-Type" content-type  #_(ext-mime-type (fs/file-name path))
                        "Accept-Ranges" "bytes"
                        "Content-Length" num-bytes-read
-                       "Content-Range" (format "bytes %d-%d/%d"
-                                               start
-                                               (+ start num-bytes-read)
-                                               (fs/size f))}
+                       "Content-Range" content-range #_(format "bytes %d-%d/%d"
+                                                               start
+                                                               (+ start num-bytes-read)
+                                                               (fs/size f))}
                       response-headers)
       :body arr})))
 
 
-(defn handle-get [{:keys [uri] :as request}]
-  (let [dir (fs/cwd)
+(defn handle-get [application-settings {:keys [uri] :as request}]
+  (let [dir (:directory application-settings)
         f (fs/path dir (s/replace-first (URLDecoder/decode uri) #"^/" ""))
         index-file (fs/path f "index.html")]
     (cond
@@ -134,7 +146,7 @@
          (drop-while fs/exists?)
          (first))))
 
-(defn handle-post [request]
+(defn handle-post [_application-settings request]
   (let [uri (:uri request)
         relative-path (if (s/starts-with? uri "/")
                         (s/replace-first uri "/" "")
@@ -159,23 +171,28 @@
      :headers {"Content-Type" "text/plain"}
      :body (str "File(s) uploaded successfully")}))
 
-(defn router [{:keys [request-method] :as request}]
-  (debug (with-out-str
-           (pprint request)))
+(defn router [application-settings]
+  (fn [{:keys [request-method] :as request}]
+    (debug (with-out-str
+             (pprint request)))
+    (cond
+      (= request-method :get)
+      (let [_ (prn "STARTING")
+            result (handle-get application-settings request)]
+        (prn "DONE")
+        (pprint (:headers result))
+        (prn (alength (:body result)))
+        result)
 
-  (cond
-    (= request-method :get)
-    (handle-get request)
+      (= request-method :post)
+      (handle-post application-settings request)
 
-    (= request-method :post)
-    (handle-post request)
+      :else
+      (http/not-found (:uri request)))))
 
-    :else
-    (http/not-found (:uri request))))
-
-(defn create-request-pipeline []
-  (-> #'router
-      (multipart/wrap-multipart-params)))
+(defn create-request-pipeline [application-settings]
+  (-> (router application-settings)
+      #_(multipart/wrap-multipart-params)))
 
 (defn- server-settings->display-strs [server-settings]
   (cond-> []
@@ -205,6 +222,6 @@
                 (debug "Server stopped"))}))
 
 (defn create-server [application-settings]
-  (let [request-pipeline (create-request-pipeline)
+  (let [request-pipeline (create-request-pipeline application-settings)
         server (create-server* application-settings request-pipeline)]
     server))

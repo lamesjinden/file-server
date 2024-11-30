@@ -24,7 +24,7 @@
     (clojure {:dir bb-dir} command)))
 
 (defn run-dev-file-server-repl []
-  (clojure {:dir bb-dir} "-M:dev-server:file-server:dev-file-server:nrepl-main"))
+  (clojure {:dir bb-dir} "-M:dev-server:dev-file-server:nrepl-main"))
 
 (defn run-file-server [command-line-args]
   (let [args (s/join " " command-line-args)

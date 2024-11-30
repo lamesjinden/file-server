@@ -2,7 +2,8 @@
   (:require
    [clojure.pprint]
    [file-server.server :as server]
-   [file-server.cli :as cli]))
+   [file-server.cli :as cli]
+   [ring.middleware.cors :refer [wrap-cors]]))
 
 (set! *warn-on-reflection* true)
 
@@ -38,7 +39,9 @@
     (println "initialize dev server app:")
     (println)
 
-    (let [request-pipeline (server/create-request-pipeline)]
+    (let [request-pipeline (-> (server/create-request-pipeline application-settings)
+                               (wrap-cors :access-control-allow-origin ["*"]
+                                          :access-control-allow-methods [:get :put :post :delete]))]
       (reset! server (server/create-server* application-settings request-pipeline)))))
 
 (defn -main [& args]
@@ -46,7 +49,11 @@
 
 (comment
 
-  (create-server "-v" "--port=8000")
+  (require '[taoensso.timbre :as timbre])
+  (timbre/set-min-level! :info)
+
+
+  (create-server #_"-v" #_"--port=8000" "--directory=/home/james/Videos")
   (start-server)
   (stop-server)
 
