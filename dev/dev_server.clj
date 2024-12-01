@@ -52,9 +52,10 @@
   (require '[taoensso.timbre :as timbre])
   (timbre/set-min-level! :info)
 
+  (do
+    (create-server #_"-v" #_"--port=8000" "--directory=/home/james/Videos")
+    (start-server))
 
-  (create-server #_"-v" #_"--port=8000" "--directory=/home/james/Videos")
-  (start-server)
   (stop-server)
 
   ;

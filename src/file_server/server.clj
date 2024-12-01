@@ -12,12 +12,6 @@
    [taoensso.timbre :as timbre :refer [debug]])
   (:import [java.net URLDecoder URLEncoder]))
 
-;; todo:
-;;; 1. streaming static file with RANGE header support
-;;;;  * investigate use of ring-range-middleware (https://clojars.org/ring-range-middleware)
-;;; 2. ~~streaming upload support~~
-;;;;  * ~~investigate use of ring.middleware.multipart-params~~
-
 (defn- file-link
   "Get HTML link for a file/directory in the given dir."
   [dir f]
@@ -34,11 +28,7 @@
     {:body (-> [:html
                 [:head
                  [:meta {:charset "UTF-8"}]
-                 [:title (str "Index of `" f "`")]
-                 [:style "body { font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; }"
-                  "form { background: #f4f4f4; padding: 20px; border-radius: 5px; }"
-                  "input[type='file'] { margin-bottom: 10px; }"
-                  "input[type='submit'] { background-color: #4CAF50; color: white; padding: 10px 15px; border: none; border-radius: 4px; cursor: pointer; }"]]
+                 [:title (str "Index of `" f "`")]]
                 [:body
                  [:div
                   [:h1 "File Upload"]
@@ -51,7 +41,7 @@
                    (for [child files]
                      [:li child])]]
                  [:hr]
-                 [:footer {:style {"text-align" "center"}} "file-server2.clj"]]]
+                 [:footer {:style {"text-align" "center"}} "file-server.clj"]]]
                html/html
                str)}))
 
@@ -88,32 +78,21 @@
    (byte-range path request-headers {}))
   ([path request-headers response-headers]
    (let [f (fs/file path)
-         _ (prn "here 1" f)
-         [start _end :as requested-range] (parse-range-header (request-headers "range"))
-         _ (prn "here 2" start)
+         [start _end
+          :as requested-range] (parse-range-header (request-headers "range"))
          arr (read-bytes f requested-range)
-         _ (prn "here 3")
-         num-bytes-read (count arr)
-         _ (prn "here 4" num-bytes-read)
-
-         content-type (ext-mime-type (fs/file-name path))
-         _ (prn "here 5" content-type)
-         content-range (format "bytes %d-%d/%d"
-                               start
-                               (+ start num-bytes-read)
-                               (fs/size f))
-         _ (prn "here 6" content-range)]
+         num-bytes-read (count arr)]
      {:status 206
-      :headers (merge {"Content-Type" content-type  #_(ext-mime-type (fs/file-name path))
+      :headers (merge {"Content-Type" (ext-mime-type (fs/file-name path))
                        "Accept-Ranges" "bytes"
-                       "Content-Length" num-bytes-read
-                       "Content-Range" content-range #_(format "bytes %d-%d/%d"
-                                                               start
-                                                               (+ start num-bytes-read)
-                                                               (fs/size f))}
+                       ;; jetty-adapter bug - without cast, will attempt to create a seq from number (httpkit handles this without issue)
+                       "Content-Length" (str num-bytes-read)
+                       "Content-Range" (format "bytes %d-%d/%d"
+                                               start
+                                               (+ start num-bytes-read)
+                                               (fs/size f))}
                       response-headers)
       :body arr})))
-
 
 (defn handle-get [application-settings {:keys [uri] :as request}]
   (let [dir (:directory application-settings)
@@ -174,15 +153,11 @@
 (defn router [application-settings]
   (fn [{:keys [request-method] :as request}]
     (debug (with-out-str
+             (println)
              (pprint request)))
     (cond
       (= request-method :get)
-      (let [_ (prn "STARTING")
-            result (handle-get application-settings request)]
-        (prn "DONE")
-        (pprint (:headers result))
-        (prn (alength (:body result)))
-        result)
+      (handle-get application-settings request)
 
       (= request-method :post)
       (handle-post application-settings request)
@@ -192,7 +167,7 @@
 
 (defn create-request-pipeline [application-settings]
   (-> (router application-settings)
-      #_(multipart/wrap-multipart-params)))
+      (multipart/wrap-multipart-params)))
 
 (defn- server-settings->display-strs [server-settings]
   (cond-> []
