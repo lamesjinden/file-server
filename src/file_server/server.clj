@@ -165,7 +165,7 @@
       (let [filename (:filename part)
             unique-filename (create-unique-filename upload-dir (or filename "upload-file"))
             body-file (:tempfile part)]
-        (fs/copy body-file unique-filename)))
+        (fs/move body-file unique-filename)))
 
     {:status 200
      :headers {"Content-Type" "text/plain"}
