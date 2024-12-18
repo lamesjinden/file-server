@@ -3,7 +3,8 @@
    [clojure.pprint]
    [file-server.server :as server]
    [file-server.cli :as cli]
-   [ring.middleware.cors :refer [wrap-cors]]))
+   [ring.middleware.cors :refer [wrap-cors]]
+   [taoensso.timbre :as timbre]))
 
 (set! *warn-on-reflection* true)
 
@@ -45,15 +46,18 @@
       (reset! server (server/create-server* application-settings request-pipeline)))))
 
 (defn -main [& args]
-  (apply create-server args))
+  (timbre/set-min-level! :info)
+  (apply create-server args)
+  (.addShutdownHook (Runtime/getRuntime)
+                    (Thread. ^Runnable stop-server))
+  (start-server))
 
 (comment
 
-  (require '[taoensso.timbre :as timbre])
   (timbre/set-min-level! :info)
 
   (do
-    (create-server #_"-v" #_"--port=8000" "--directory=/home/james/Videos")
+    (create-server #_"-v" #_"--port=8000" #_"--directory=/tmp")
     (start-server))
 
   (stop-server)

@@ -22,21 +22,28 @@
 
                :host
                {:ref "<host>"
-                :desc "IP/hosntame of the interface for the server application."
+                :desc "The hostname to listen on."
                 :alias :i}
 
                :port
                {:ref "<port>"
-                :desc "Port for the server application."
+                :desc "The port to listen on."
                 :alias :p
                 :coerce :long
                 :validate {:pred #(< 0 % 0x10000)
                            :ex-msg (fn [m] (str "Not a valid port number: " (:value m)))}}
 
+               :headers
+               {:ref "<headers>"
+                :desc "Map of headers {key value}."
+                :coerce :edn}
+
                :directory
                {:ref "<directory>"
-                :desc "Directory to serve"
-                :alias :d}})
+                :desc "Directory from which to serve assets."
+                :alias :d
+                :validate {:pred #(fs/directory? %)
+                           :ex-msg (fn [m] (str "The given dir `" (:value m) "` is not a directory."))}}})
 
 (defn create-cli-error-fn [cli-errors-ref]
   (fn [{:keys [_spec type cause msg _option] :as data}]

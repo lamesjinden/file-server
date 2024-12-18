@@ -19,7 +19,9 @@
   (clojure {:dir bb-dir} "-T:file-uberjar uber" (format "{:timestamp-str \"%s\"}" timestamp-str)))
 
 (defn run-dev-file-server [command-line-args]
-  (let [args (s/join " " command-line-args)
+  (let [args (->> command-line-args
+                  (map #(str "'" % "'"))
+                  (s/join " "))
         command (format "-M:dev-server:dev-file-server:run-dev-file-server %s" args)]
     (clojure {:dir bb-dir} command)))
 
@@ -27,7 +29,9 @@
   (clojure {:dir bb-dir} "-M:dev-server:dev-file-server:nrepl-main"))
 
 (defn run-file-server [command-line-args]
-  (let [args (s/join " " command-line-args)
+  (let [args (->> command-line-args
+                  (map #(str "'" % "'"))
+                  (s/join " "))
         command (format "-M:run-file-server %s" args)]
     (clojure {:dir bb-dir} command)))
 
