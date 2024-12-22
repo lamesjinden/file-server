@@ -11,7 +11,7 @@ In the spirit of `babashka.http-server` and Python's `http.server`, `file-server
 
 ## History
 
-`file-server` started as a clone of `[http-server](https://github.com/lamesjinden/http-server)` (a wrapper around `babashka.http-server`) with the goal of adding upload support.
+`file-server` started as a clone of [http-server](https://github.com/lamesjinden/http-server) (a wrapper around `babashka.http-server`) with the goal of adding upload support.
 
 During development, `file-server` failed to handle sending and receiving of larger files. Further investigation revealed that the underlying HTTP server, `http-kit` (included in `babashka`), [buffers all requests and responses in memory before processing](https://github.com/http-kit/http-kit/issues/90). This specific limitation could not reasonably be worked-around, so another HTTP server was required. `file-server` was converted to use `ring-jetty-adapter`, the 'standard' Clojure HTTP back-end. But, this comes with its own limitations. Specifically, `file-server` could no longer be executed via `Babashka`, thus sacrificing fast startup times.
 
@@ -30,8 +30,8 @@ As a pure Clojure/JVM project, `file-server` could take advantage of a wider arr
 
 ### Execution
 
-_pre-req_: `java` is on the `$PATH` (tested on JDK 21)
-_pre-req_: access to the build artifact, `file-server.jar` (naming not exact; default builds currently generate `file-server-0.1.0-SNAPSHOT.jar`)
+* _pre-req_: `java` is on the `$PATH` (tested on JDK 21)
+* _pre-req_: access to the build artifact, `file-server.jar` (naming not exact; default builds currently generate `file-server-0.1.0-SNAPSHOT.jar`)
 
 From a terminal, execute the following:
 
